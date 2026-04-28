@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>GroceryHub | Fresh Groceries Delivered in Guwahati</title>
+  <!-- Google Fonts + Font Awesome 6 (free) + Leaflet CSS -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #fefaf5;
+      color: #1e2a2e;
+      scroll-behavior: smooth;
+    }
+
+    :root {
+      --primary: #2c7a4d;
+      --primary-dark: #1e5a3a;
+      --primary-light: #e8f5e9;
+      --accent: #f4a261;
+      --gray-bg: #f9f7f3;
+      --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+      --border-radius: 24px;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Header */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      flex-wrap: wrap;
+      gap: 16px;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .logo h1 {
+      font-size: 1.9rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #2c7a4d, #3b9b62);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.5px;
+    }
+    .logo span {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #5e6b6f;
+      display: block;
+    }
+
+    .cart-icon {
+      position: relative;
+      cursor: pointer;
+      background: white;
+      padding: 12px 18px;
+      border-radius: 50px;
+      box-shadow: var(--card-shadow);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cart-icon i {
+      font-size: 1.5rem;
+      color: var(--primary);
+    }
+    .cart-count {
+      background: var(--accent);
+      color: #1e2a2e;
+      font-weight: bold;
+      font-size: 0.75rem;
+      border-radius: 30px;
+      padding: 2px 8px;
+      min-width: 24px;
+      text-align: center;
+    }
+    .cart-icon:hover {
+      transform: scale(1.02);
+      background: #ffffffec;
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(120deg, #eef7e6, #ffffff);
+      border-radius: 32px;
+      margin: 32px 0 40px;
+      padding: 48px 32px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 32px;
+    }
+    .hero-text h2 {
+      font-size: 2.6rem;
+      font-weight: 700;
+      color: #1a3a2b;
+    }
+    .hero-text p {
+      font-size: 1.1rem;
+      margin: 16px 0 24px;
+      color: #2c4b36;
+      max-width: 500px;
+    }
+    .btn-primary {
+      background: var(--primary);
+      border: none;
+      padding: 14px 28px;
+      border-radius: 40px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1rem;
+    }
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+    .badge-offer {
+      background: #ffedd5;
+      padding: 8px 16px;
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #b45309;
+      display: inline-block;
+    }
+
+    /* Products section */
+    .section-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 40px 0 24px 0;
+      position: relative;
+      display: inline-block;
+    }
+    .section-title:after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 60px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 4px;
+    }
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 28px;
+      margin: 32px 0 48px;
+    }
+    .product-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 24px 16px 20px;
+      text-align: center;
+      box-shadow: var(--card-shadow);
+      transition: all 0.25s ease;
+      border: 1px solid #f0ede8;
+    }
+    .product-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 30px -12px rgba(0, 0, 0, 0.1);
+    }
+    .product-emoji {
+      font-size: 3.8rem;
+      background: #f1f8e9;
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      border-radius: 60px;
+    }
+    .product-name {
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+    .product-price {
+      font-weight: 700;
+      color: var(--primary);
+      margin: 8px 0;
+      font-size: 1.25rem;
+    }
+    .product-unit {
+      font-size: 0.8rem;
+      color: #6c757d;
+    }
+    .add-to-cart {
+      background: var(--primary-light);
+      border: none;
+      padding: 10px 18px;
+      border-radius: 40px;
+      font-weight: 600;
+      margin-top: 14px;
+      cursor: pointer;
+      width: 100%;
+      transition: 0.2s;
+      color: var(--primary-dark);
+    }
+    .add-to-cart:hover {
+      background: #c8e6d9;
+      color: #0a3b24;
+    }
+
+    /* Address & map section */
+    .info-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      background: white;
+      border-radius: 32px;
+      padding: 32px;
+      margin: 48px 0;
+      box-shadow: var(--card-shadow);
+      align-items: stretch;
+    }
+    .address-card {
+      flex: 1;
+      background: #fefaf2;
+      border-radius: 28px;
+      padding: 24px;
+    }
+    .address-card i {
+      font-size: 2rem;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+    .address-card h3 {
+      font-size: 1.4rem;
+      margin-bottom: 16px;
+    }
+    .address-detail {
+      line-height: 1.6;
+      margin: 12px 0;
+      font-weight: 500;
+    }
+    .map-container {
+      flex: 1;
+      border-radius: 28px;
+      overflow: hidden;
+      min-height: 280px;
+    }
+    #storeMap {
+      height: 100%;
+      width: 100%;
+      min-height: 280px;
+      border-radius: 20px;
+    }
+
+    /* cart drawer overlay */
+    .cart-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(3px);
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: 0.25s;
+    }
+    .cart-overlay.active {
+      visibility: visible;
+      opacity: 1;
+    }
+    .cart-drawer {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: 100%;
+      max-width: 420px;
+      height: 100%;
+      background: white;
+      z-index: 1001;
+      box-shadow: -8px 0 30px rgba(0,0,0,0.15);
+      transition: right 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      display: flex;
+      flex-direction: column;
+    }
+    .cart-overlay.active .cart-drawer {
+      right: 0;
+    }
+    .cart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid #e2e8f0;
+      font-weight: 700;
+      font-size: 1.3rem;
+    }
+    .cart-items-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px dashed #e9ecef;
+    }
+    .cart-item-info p {
+      font-weight: 600;
+    }
+    .cart-item-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .cart-item-controls button {
+      background: #f1f3f5;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 30px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .cart-total {
+      padding: 20px;
+      border-top: 2px solid #e9ecef;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+    .checkout-btn {
+      background: var(--primary);
+      color: white;
+      width: 90%;
+      margin: 12px auto 24px;
+      padding: 14px;
+      border-radius: 40px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .empty-cart-msg {
+      text-align: center;
+      color: #7c8b8f;
+      margin-top: 48px;
+    }
+    footer {
+      background: #1e2a2e;
+      color: #cddfda;
+      padding: 32px 24px;
+      margin-top: 40px;
+      border-radius: 28px 28px 0 0;
+      text-align: center;
+    }
+    @media (max-width: 700px) {
+      .hero-text h2 { font-size: 1.8rem; }
+      .container { padding: 0 18px; }
+      .navbar { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Navbar -->
+  <div class="navbar">
+    <div class="logo">
+      <h1>GroceryHub <i class="fas fa-shopping-basket" style="color:#2c7a4d;"></i></h1>
+      <span>Fresh • Fast • Local</span>
+    </div>
+    <div class="cart-icon" id="cartIconBtn">
+      <i class="fas fa-cart-shopping"></i>
+      <span class="cart-count" id="cartCountBadge">0</span>
+    </div>
+  </div>
+
+  <!-- Hero Banner -->
+  <div class="hero">
+    <div class="hero-text">
+      <div class="badge-offer"><i class="fas fa-truck-fast"></i> Free delivery on orders above ₹399</div>
+      <h2>Farm-fresh groceries,<br>delivered to your home in Guwahati</h2>
+      <p>📍 Serving Dhirenpara, Kamrup Metro & surrounding areas. Get quality produce at honest prices.</p>
+      <button class="btn-primary" id="shopNowBtn"><i class="fas fa-leaf"></i> Shop Now</button>
+    </div>
+    <div style="font-size: 6rem;">🥬🍅🥑</div>
+  </div>
+
+  <!-- Products grid loaded dynamically -->
+  <div>
+    <div class="section-title">🔥 Today's fresh picks</div>
+    <div class="products-grid" id="productsGrid"></div>
+  </div>
+
+  <!-- Address + Map Section (Professional Showcase) -->
+  <div class="info-section">
+    <div class="address-card">
+      <i class="fas fa-store"></i>
+      <h3>GroceryHub Store & HQ</h3>
+      <div class="address-detail">
+        <i class="fas fa-location-dot" style="margin-right: 8px;"></i> Dhirenpara Main Road,<br>
+        Guwahati - 781025, Kamrup Metro, Assam<br>
+        <i class="fas fa-map-pin"></i> PIN: 781025<br>
+        <i class="fas fa-phone-alt"></i> +91 70860 12345<br>
+        <i class="far fa-clock"></i> 9:00 AM – 9:00 PM (Mon-Sun)
+      </div>
+      <p style="margin-top: 14px;"><i class="fas fa-check-circle" style="color:#2c7a4d;"></i> 30-min express delivery in Dhirenpara area</p>
+    </div>
+    <div class="map-container">
+      <div id="storeMap"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p><strong>GroceryHub</strong> — Your neighbourhood grocery partner in Kamrup Metro, Assam</p>
+    <p style="margin-top: 12px;">📍 Dhirenpara, Guwahati, PIN 781025 | 🌿 Freshness guaranteed</p>
+    <p style="margin-top: 20px; font-size: 0.8rem;">© 2025 GroceryHub. All rights reserved. <i class="fas fa-heart" style="color:#f4a261;"></i> Serving Guwahati with love.</p>
+  </footer>
+</div>
+
+<!-- Cart Drawer Overlay -->
+<div class="cart-overlay" id="cartOverlay">
+  <div class="cart-drawer">
+    <div class="cart-header">
+      <span><i class="fas fa-bag-shopping"></i> Your Cart</span>
+      <i class="fas fa-times" id="closeCartBtn" style="cursor:pointer; font-size:1.4rem;"></i>
+    </div>
+    <div class="cart-items-list" id="cartItemsList">
+      <div class="empty-cart-msg">Your cart is empty 🛒<br>Add fresh groceries!</div>
+    </div>
+    <div class="cart-total" id="cartTotalDisplay">Total: ₹0</div>
+    <button class="checkout-btn" id="proceedCheckoutBtn"><i class="fas fa-rupee-sign"></i> Proceed to Checkout</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  // ---------- PRODUCT DATA ----------
+  const products = [
+    { id: 1, name: "Organic Apples", price: 98, unit: "1 kg", emoji: "🍎", category: "fruits" },
+    { id: 2, name: "Cavendish Banana", price: 42, unit: "6 pcs", emoji: "🍌", category: "fruits" },
+    { id: 3, name: "Juicy Tomatoes", price: 35, unit: "500 g", emoji: "🍅", category: "veg" },
+    { id: 4, name: "Fresh Potatoes", price: 30, unit: "1 kg", emoji: "🥔", category: "veg" },
+    { id: 5, name: "Full Cream Milk", price: 62, unit: "1 L", emoji: "🥛", category: "dairy" },
+    { id: 6, name: "Brown Bread", price: 38, unit: "400 g", emoji: "🍞", category: "bakery" },
+    { id: 7, name: "Organic Carrots", price: 48, unit: "500 g", emoji: "🥕", category: "veg" },
+    { id: 8, name: "Broccoli Premium", price: 85, unit: "400 g", emoji: "🥦", category: "veg" }
+  ];
+
+  // Cart state: { id, name, price, quantity, emoji }
+  let cart = [];
+
+  // DOM elements
+  const productsGrid = document.getElementById('productsGrid');
+  const cartCountBadge = document.getElementById('cartCountBadge');
+  const cartOverlay = document.getElementById('cartOverlay');
+  const cartItemsList = document.getElementById('cartItemsList');
+  const cartTotalDisplay = document.getElementById('cartTotalDisplay');
+  const cartIconBtn = document.getElementById('cartIconBtn');
+  const closeCartBtn = document.getElementById('closeCartBtn');
+  const shopNowBtn = document.getElementById('shopNowBtn');
+  const proceedCheckoutBtn = document.getElementById('proceedCheckoutBtn');
+
+  // Helper: update cart badge (total quantity count)
+  function updateCartBadge() {
+    const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+    cartCountBadge.innerText = totalQty;
+  }
+
+  // Render cart drawer UI
+  function renderCartDrawer() {
+    if (!cartItemsList) return;
+    if (cart.length === 0) {
+      cartItemsList.innerHTML = `<div class="empty-cart-msg"><i class="fas fa-shopping-cart"></i> No items yet<br>Add fresh groceries from Dhirenpara store!</div>`;
+      cartTotalDisplay.innerText = `Total: ₹0`;
+      return;
+    }
+
+    let html = '';
+    let total = 0;
+    cart.forEach((item, idx) => {
+      const itemTotal = item.price * item.quantity;
+      total += itemTotal;
+      html += `
+        <div class="cart-item" data-id="${item.id}">
+          <div class="cart-item-info">
+            <p>${item.emoji || '🛒'} ${item.name} <span style="font-size:0.75rem;">${item.unit || ''}</span></p>
+            <small>₹${item.price} × ${item.quantity}</small>
+          </div>
+          <div class="cart-item-controls">
+            <button class="cart-qty-decr" data-id="${item.id}">−</button>
+            <span>${item.quantity}</span>
+            <button class="cart-qty-incr" data-id="${item.id}">+</button>
+            <button class="cart-remove" data-id="${item.id}" style="background: #ffe0db;">🗑️</button>
+          </div>
+        </div>
+      `;
+    });
+    cartItemsList.innerHTML = html;
+    cartTotalDisplay.innerText = `Total: ₹${total}`;
+
+    // attach event listeners for cart controls
+    document.querySelectorAll('.cart-qty-decr').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(btn.dataset.id);
+        updateCartQuantity(id, -1);
+      });
+    });
+    document.querySelectorAll('.cart-qty-incr').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(btn.dataset.id);
+        updateCartQuantity(id, 1);
+      });
+    });
+    document.querySelectorAll('.cart-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(btn.dataset.id);
+        removeCartItem(id);
+      });
+    });
+  }
+
+  function updateCartQuantity(productId, delta) {
+    const itemIndex = cart.findIndex(i => i.id === productId);
+    if (itemIndex !== -1) {
+      const newQty = cart[itemIndex].quantity + delta;
+      if (newQty <= 0) {
+        cart.splice(itemIndex, 1);
+      } else {
+        cart[itemIndex].quantity = newQty;
+      }
+      saveCartToLocal();
+      renderCartDrawer();
+      updateCartBadge();
+    }
+  }
+
+  function removeCartItem(productId) {
+    cart = cart.filter(i => i.id !== productId);
+    saveCartToLocal();
+    renderCartDrawer();
+    updateCartBadge();
+  }
+
+  // Add product to cart
+  function addToCart(product) {
+    const existing = cart.find(item => item.id === product.id);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      cart.push({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: 1,
+        emoji: product.emoji,
+        unit: product.unit
+      });
+    }
+    saveCartToLocal();
+    updateCartBadge();
+    renderCartDrawer(); 
+    // subtle animation hint: show cart drawer briefly? Not needed but better
+    // flash badge? 
+    const badge = document.getElementById('cartCountBadge');
+    badge.style.transform = 'scale(1.2)';
+    setTimeout(() => badge.style.transform = '', 200);
+  }
+
+  function saveCartToLocal() {
+    localStorage.setItem('groceryhub_cart', JSON.stringify(cart));
+  }
+
+  function loadCartFromLocal() {
+    const saved = localStorage.getItem('groceryhub_cart');
+    if (saved) {
+      try {
+        cart = JSON.parse(saved);
+      } catch(e) { cart = []; }
+    } else {
+      cart = [];
+    }
+    updateCartBadge();
+    if (cartOverlay && cartOverlay.classList.contains('active')) {
+      renderCartDrawer();
+    }
+  }
+
+  // Render product cards dynamically
+  function renderProducts() {
+    if (!productsGrid) return;
+    productsGrid.innerHTML = '';
+    products.forEach(prod => {
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.innerHTML = `
+        <div class="product-emoji">${prod.emoji}</div>
+        <div class="product-name">${prod.name}</div>
+        <div class="product-price">₹${prod.price}</div>
+        <div class="product-unit">${prod.unit}</div>
+        <button class="add-to-cart" data-id="${prod.id}"><i class="fas fa-plus-circle"></i> Add to Cart</button>
+      `;
+      productsGrid.appendChild(card);
+    });
+    // attach add-to-cart events
+    document.querySelectorAll('.add-to-cart').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const prodId = parseInt(btn.dataset.id);
+        const productToAdd = products.find(p => p.id === prodId);
+        if (productToAdd) {
+          addToCart(productToAdd);
+          // simple feedback: pop effect & drawer open optional?
+        }
+      });
+    });
+  }
+
+  // Cart drawer UI toggling
+  function openCartDrawer() {
+    renderCartDrawer();
+    cartOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeCartDrawer() {
+    cartOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  // Checkout action with alert and delivery address confirmation
+  function checkoutAction() {
+    if (cart.length === 0) {
+      alert("Your cart is empty! Add some fresh groceries first 🛒");
+      return;
+    }
+    const total = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+    const addressMsg = "📍 Dhirenpara, Guwahati - 781025, Kamrup Metro, Assam";
+    alert(`✅ Order placed successfully!\n\nThank you for shopping at GroceryHub.\nTotal amount: ₹${total}\nDelivery to: ${addressMsg}\nOur delivery team will reach you within 30-40 minutes. 🚚💨`);
+    // Clear cart after successful order
+    cart = [];
+    saveCartToLocal();
+    updateCartBadge();
+    renderCartDrawer();
+    closeCartDrawer();
+  }
+
+  // Leaflet Map Setup (Dhirenpara, Guwahati, Assam)
+  function initMap() {
+    // Coordinates for Dhirenpara area (approximate but accurate to locality)
+    const lat = 26.1425;
+    const lng = 91.7380;
+    const map = L.map('storeMap').setView([lat, lng], 15);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB',
+      subdomains: 'abcd',
+      maxZoom: 19
+    }).addTo(map);
+    const marker = L.marker([lat, lng]).addTo(map);
+    marker.bindPopup("<b>GroceryHub Store</b><br>Dhirenpara, Guwahati 781025").openPopup();
+  }
+
+  // event listeners for UI interactions
+  cartIconBtn.addEventListener('click', openCartDrawer);
+  closeCartBtn.addEventListener('click', closeCartDrawer);
+  cartOverlay.addEventListener('click', (e) => {
+    if (e.target === cartOverlay) closeCartDrawer();
+  });
+  shopNowBtn.addEventListener('click', () => {
+    document.querySelector('.section-title')?.scrollIntoView({ behavior: 'smooth' });
+  });
+  proceedCheckoutBtn.addEventListener('click', checkoutAction);
+
+  // initialize everything on page load
+  window.addEventListener('DOMContentLoaded', () => {
+    renderProducts();
+    loadCartFromLocal();
+    renderCartDrawer();   // initial cart view (closed but consistent state)
+    if (document.getElementById('storeMap')) {
+      initMap();
+    } else {
+      console.warn("map container missing");
+    }
+    // extra: if any product grid adjustment
+  });
+</script>
+</body>
+</html>
