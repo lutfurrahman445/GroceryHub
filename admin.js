@@ -1,113 +1,107 @@
-(async function initAdmin() {
-    const verify = await fetch('/api/admin/verify');
-    const { isAdmin } = await verify.json();
-    if (!isAdmin) {
-        document.getElementById('loginSection').style.display = 'block';
-        document.getElementById('dashboard').style.display = 'none';
-    } else {
+async function checkAuth() {
+    const res = await fetch('/api/admin/verify');
+    const { isAdmin } = await res.json();
+    if (isAdmin) {
         document.getElementById('loginSection').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         loadOrders();
-        loadProductsAdmin();
+        loadProducts();
+    } else {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('dashboard').style.display = 'none';
     }
-})();
+}
 
-document.getElementById('loginBtn')?.addEventListener('click', async () => {
+document.getElementById('loginBtn').onclick = async () => {
     const username = document.getElementById('adminUser').value;
     const password = document.getElementById('adminPass').value;
-    const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    });
-    if (res.ok) {
-        location.reload();
-    } else alert('Invalid login');
-});
+    const res = await fetch('/api/admin/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password}) });
+    if (res.ok) location.reload();
+    else alert('Wrong credentials');
+};
+document.getElementById('logoutBtn').onclick = async () => { await fetch('/api/admin/logout', { method:'POST' }); location.reload(); };
 
-document.getElementById('logoutBtn')?.addEventListener('click', async () => {
-    await fetch('/api/admin/logout', { method: 'POST' });
-    location.reload();
-});
-
-// Tabs
+// Tab switching
 document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.onclick = () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        const tab = btn.dataset.tab;
-        document.getElementById('ordersTab').classList.toggle('active', tab === 'orders');
-        document.getElementById('productsTab').classList.toggle('active', tab === 'products');
-        if (tab === 'orders') loadOrders();
-        if (tab === 'products') loadProductsAdmin();
-    });
+        document.getElementById('ordersTab').classList.toggle('active', btn.dataset.tab === 'orders');
+        document.getElementById('productsTab').classList.toggle('active', btn.dataset.tab === 'products');
+        if (btn.dataset.tab === 'orders') loadOrders();
+        if (btn.dataset.tab === 'products') loadProducts();
+    };
 });
 
 async function loadOrders() {
     const res = await fetch('/api/admin/orders');
     const orders = await res.json();
     const container = document.getElementById('ordersList');
-    container.innerHTML = orders.map(order => `
+    container.innerHTML = orders.map(o => `
         <div class="order-card">
-            <p><strong>${order.customer_name}</strong> | ${order.customer_phone}</p>
-            <p>Address: ${order.customer_address}</p>
-            <p>Items: ${order.order_items}</p>
-            <p>Total: ₹${order.total_price}</p>
-            <p>Date: ${new Date(order.order_date).toLocaleString()}</p>
-            <select class="status-select" data-id="${order.id}">
-                <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
-                <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Shipped</option>
-                <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+            <strong>${o.customer_name}</strong> (${o.customer_phone})<br>
+            Address: ${o.customer_address}<br>
+            Items: ${o.order_items}<br>
+            Total: ₹${o.total_price}<br>
+            Date: ${new Date(o.order_date).toLocaleString()}<br>
+            Status: 
+            <select class="status-update" data-id="${o.id}">
+                <option ${o.status==='pending'?'selected':''}>pending</option>
+                <option ${o.status==='shipped'?'selected':''}>shipped</option>
+                <option ${o.status==='delivered'?'selected':''}>delivered</option>
             </select>
         </div>
     `).join('');
-    document.querySelectorAll('.status-select').forEach(select => {
-        select.addEventListener('change', async (e) => {
-            const orderId = select.dataset.id;
-            const newStatus = select.value;
-            await fetch(`/api/admin/orders/${orderId}/status`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
-            });
+    document.querySelectorAll('.status-update').forEach(sel => {
+        sel.onchange = async () => {
+            await fetch(`/api/admin/orders/${sel.dataset.id}/status`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:sel.value}) });
             loadOrders();
-        });
+        };
     });
 }
 
-async function loadProductsAdmin() {
+async function loadProducts() {
     const res = await fetch('/api/admin/products');
     const products = await res.json();
     const container = document.getElementById('productsList');
     container.innerHTML = products.map(p => `
         <div class="product-card-admin">
-            <strong>${p.name}</strong> (${p.category}) - ₹${p.price}/${p.unit} | Stock: ${p.stock}
-            <button class="edit-product" data-id="${p.id}">Edit</button>
-            <button class="delete-product" data-id="${p.id}">Delete</button>
+            <b>${p.name}</b> (${p.category}) - ₹${p.price}/${p.unit} | Stock: ${p.stock}
+            <button class="edit-product" data-id="${p.id}" data-name="${p.name}" data-cat="${p.category}" data-price="${p.price}" data-unit="${p.unit}" data-stock="${p.stock}" data-img="${p.image}">✏️ Edit</button>
+            <button class="delete-product" data-id="${p.id}">🗑️ Delete</button>
         </div>
     `).join('');
     document.querySelectorAll('.delete-product').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            if (confirm('Delete product?')) {
-                const id = btn.dataset.id;
-                await fetch(`/api/admin/products/${id}`, { method: 'DELETE' });
-                loadProductsAdmin();
+        btn.onclick = async () => {
+            if(confirm('Delete product?')) {
+                await fetch(`/api/admin/products/${btn.dataset.id}`, { method:'DELETE' });
+                loadProducts();
             }
-        });
+        };
     });
-    // Simplified edit: prompt based (in real app expand)
     document.querySelectorAll('.edit-product').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            alert('For full edit, implement modal. Use "Add product" to update. Delete and re-add for demo.');
-        });
+        btn.onclick = async () => {
+            const newName = prompt('New name', btn.dataset.name);
+            if(!newName) return;
+            const updated = {
+                name: newName,
+                category: prompt('Category', btn.dataset.cat),
+                price: parseFloat(prompt('Price', btn.dataset.price)),
+                unit: prompt('Unit', btn.dataset.unit),
+                stock: parseInt(prompt('Stock', btn.dataset.stock)),
+                image: prompt('Image URL', btn.dataset.img)
+            };
+            await fetch(`/api/admin/products/${btn.dataset.id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(updated) });
+            loadProducts();
+        };
     });
 }
 
-document.getElementById('showAddProductForm')?.addEventListener('click', () => {
-    const formDiv = document.getElementById('productFormContainer');
-    formDiv.style.display = formDiv.style.display === 'none' ? 'block' : 'none';
-});
-document.getElementById('productForm')?.addEventListener('submit', async (e) => {
+document.getElementById('showAddProductBtn').onclick = () => {
+    const div = document.getElementById('productFormDiv');
+    div.style.display = div.style.display === 'none' ? 'block' : 'none';
+};
+document.getElementById('productForm').onsubmit = async (e) => {
     e.preventDefault();
     const newProduct = {
         name: document.getElementById('prodName').value,
@@ -117,12 +111,10 @@ document.getElementById('productForm')?.addEventListener('submit', async (e) => 
         stock: parseInt(document.getElementById('prodStock').value),
         image: document.getElementById('prodImage').value
     };
-    await fetch('/api/admin/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newProduct)
-    });
-    loadProductsAdmin();
+    await fetch('/api/admin/products', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(newProduct) });
+    loadProducts();
     e.target.reset();
-    document.getElementById('productFormContainer').style.display = 'none';
-});
+    document.getElementById('productFormDiv').style.display = 'none';
+};
+
+checkAuth();

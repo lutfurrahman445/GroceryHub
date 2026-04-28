@@ -3,26 +3,22 @@ const Database = require('better-sqlite3');
 const session = require('express-session');
 const bodyParser = require('body-parser');
 const path = require('path');
-const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
-// Middleware
-app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 app.use(session({
-    secret: 'groceryhubsecretkey2024',
+    secret: 'groceryhub_secret_key',
     resave: false,
     saveUninitialized: false,
     cookie: { secure: false, maxAge: 3600000 }
 }));
 
-// Database setup
+// ---------- SQLite Database Setup ----------
 const db = new Database('grocery.db');
 
-// Create tables
 db.exec(`
     CREATE TABLE IF NOT EXISTS products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,7 +29,7 @@ db.exec(`
         stock INTEGER NOT NULL,
         image TEXT DEFAULT 'https://via.placeholder.com/150?text=Grocery'
     );
-    
+
     CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         customer_name TEXT NOT NULL,
@@ -46,14 +42,14 @@ db.exec(`
     );
 `);
 
-// Seed initial products if empty
-const productCount = db.prepare('SELECT COUNT(*) as count FROM products').get();
-if (productCount.count === 0) {
+// Seed sample products if table is empty
+const count = db.prepare('SELECT COUNT(*) as c FROM products').get().c;
+if (count === 0) {
     const insert = db.prepare(`
         INSERT INTO products (name, category, price, unit, stock, image) 
         VALUES (?, ?, ?, ?, ?, ?)
     `);
-    const products = [
+    const samples = [
         ['Basmati Rice', 'Grains', 120, 'kg', 50, 'https://via.placeholder.com/150?text=Rice'],
         ['Wheat Flour', 'Grains', 45, 'kg', 40, 'https://via.placeholder.com/150?text=Flour'],
         ['Sugar', 'Pantry', 40, 'kg', 60, 'https://via.placeholder.com/150?text=Sugar'],
@@ -67,10 +63,10 @@ if (productCount.count === 0) {
         ['Curd', 'Dairy', 45, 'pack', 15, 'https://via.placeholder.com/150?text=Curd'],
         ['Bread', 'Bakery', 35, 'loaf', 20, 'https://via.placeholder.com/150?text=Bread']
     ];
-    products.forEach(p => insert.run(...p));
+    samples.forEach(s => insert.run(...s));
 }
 
-// ---------- PUBLIC API ----------
+// ---------- Customer APIs ----------
 app.get('/api/products', (req, res) => {
     const products = db.prepare('SELECT * FROM products').all();
     res.json(products);
@@ -78,25 +74,21 @@ app.get('/api/products', (req, res) => {
 
 app.post('/api/orders', (req, res) => {
     const { customer_name, customer_phone, customer_address, cartItems, total_price } = req.body;
-    if (!customer_name || !customer_phone || !customer_address || !cartItems || !cartItems.length) {
-        return res.status(400).json({ error: 'Missing order details' });
+    if (!customer_name || !customer_phone || !customer_address || !cartItems.length) {
+        return res.status(400).json({ error: 'Missing fields' });
     }
-    const orderItemsJson = JSON.stringify(cartItems);
     const stmt = db.prepare(`
-        INSERT INTO orders (customer_name, customer_phone, customer_address, order_items, total_price, status)
-        VALUES (?, ?, ?, ?, ?, 'pending')
+        INSERT INTO orders (customer_name, customer_phone, customer_address, order_items, total_price)
+        VALUES (?, ?, ?, ?, ?)
     `);
-    const info = stmt.run(customer_name, customer_phone, customer_address, orderItemsJson, total_price);
+    const info = stmt.run(customer_name, customer_phone, customer_address, JSON.stringify(cartItems), total_price);
     res.json({ success: true, orderId: info.lastInsertRowid });
 });
 
-// ---------- ADMIN MIDDLEWARE ----------
+// ---------- Admin Middleware ----------
 function isAdmin(req, res, next) {
-    if (req.session && req.session.adminLoggedIn) {
-        next();
-    } else {
-        res.status(401).json({ error: 'Unauthorized' });
-    }
+    if (req.session && req.session.adminLoggedIn) next();
+    else res.status(401).json({ error: 'Unauthorized' });
 }
 
 app.post('/api/admin/login', (req, res) => {
@@ -104,9 +96,7 @@ app.post('/api/admin/login', (req, res) => {
     if (username === 'admin' && password === 'groceryhub') {
         req.session.adminLoggedIn = true;
         res.json({ success: true });
-    } else {
-        res.status(401).json({ error: 'Invalid credentials' });
-    }
+    } else res.status(401).json({ error: 'Invalid' });
 });
 
 app.post('/api/admin/logout', (req, res) => {
@@ -115,11 +105,7 @@ app.post('/api/admin/logout', (req, res) => {
 });
 
 app.get('/api/admin/verify', (req, res) => {
-    if (req.session && req.session.adminLoggedIn) {
-        res.json({ isAdmin: true });
-    } else {
-        res.json({ isAdmin: false });
-    }
+    res.json({ isAdmin: !!req.session?.adminLoggedIn });
 });
 
 // Admin: Orders
@@ -130,23 +116,17 @@ app.get('/api/admin/orders', isAdmin, (req, res) => {
 
 app.put('/api/admin/orders/:id/status', isAdmin, (req, res) => {
     const { status } = req.body;
-    const { id } = req.params;
-    const stmt = db.prepare('UPDATE orders SET status = ? WHERE id = ?');
-    stmt.run(status, id);
+    db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, req.params.id);
     res.json({ success: true });
 });
 
 // Admin: Products CRUD
 app.get('/api/admin/products', isAdmin, (req, res) => {
-    const products = db.prepare('SELECT * FROM products').all();
-    res.json(products);
+    res.json(db.prepare('SELECT * FROM products').all());
 });
 
 app.post('/api/admin/products', isAdmin, (req, res) => {
     const { name, category, price, unit, stock, image } = req.body;
-    if (!name || !category || !price || !unit || stock === undefined) {
-        return res.status(400).json({ error: 'Missing fields' });
-    }
     const stmt = db.prepare(`
         INSERT INTO products (name, category, price, unit, stock, image)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -157,29 +137,19 @@ app.post('/api/admin/products', isAdmin, (req, res) => {
 
 app.put('/api/admin/products/:id', isAdmin, (req, res) => {
     const { name, category, price, unit, stock, image } = req.body;
-    const { id } = req.params;
-    const stmt = db.prepare(`
-        UPDATE products SET name = ?, category = ?, price = ?, unit = ?, stock = ?, image = ? WHERE id = ?
-    `);
-    stmt.run(name, category, price, unit, stock, image || 'https://via.placeholder.com/150?text=Grocery', id);
+    db.prepare(`
+        UPDATE products SET name=?, category=?, price=?, unit=?, stock=?, image=? WHERE id=?
+    `).run(name, category, price, unit, stock, image, req.params.id);
     res.json({ success: true });
 });
 
 app.delete('/api/admin/products/:id', isAdmin, (req, res) => {
-    const { id } = req.params;
-    const stmt = db.prepare('DELETE FROM products WHERE id = ?');
-    stmt.run(id);
+    db.prepare('DELETE FROM products WHERE id=?').run(req.params.id);
     res.json({ success: true });
 });
 
 // Serve frontend
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
-app.listen(PORT, () => {
-    console.log(`Grocery Hub running on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`Grocery Hub running at http://localhost:${PORT}`));
