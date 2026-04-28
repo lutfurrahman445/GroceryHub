@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocery Hub - Fresh Groceries Delivered</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <h1><i class="fas fa-shopping-basket"></i> Grocery Hub</h1>
+            <p>Your neighbourhood grocery store</p>
+        </div>
+        <div class="contact-header">
+            <a href="https://wa.me/917002336938?text=Hello%20Grocery%20Hub%2C%20I%20want%20to%20place%20an%20order!" target="_blank" class="whatsapp-btn">
+                <i class="fab fa-whatsapp"></i> 7002336938
+            </a>
+        </div>
+    </header>
+
+    <div class="hero">
+        <div class="hero-content">
+            <h2>Fresh & Quality Groceries</h2>
+            <p>All grocery items delivered to your doorstep. Shop now!</p>
+            <div class="address">
+                <i class="fas fa-map-marker-alt"></i> Dhirenpara, Guwahati - 781025
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <aside class="filters">
+            <h3>Categories</h3>
+            <select id="categoryFilter">
+                <option value="all">All Categories</option>
+                <option value="Grains">Grains</option>
+                <option value="Pantry">Pantry</option>
+                <option value="Oils">Oils</option>
+                <option value="Pulses">Pulses</option>
+                <option value="Beverages">Beverages</option>
+                <option value="Sauces">Sauces</option>
+                <option value="Fruits">Fruits</option>
+                <option value="Vegetables">Vegetables</option>
+                <option value="Dairy">Dairy</option>
+                <option value="Bakery">Bakery</option>
+            </select>
+            <input type="text" id="searchInput" placeholder="Search products...">
+        </aside>
+
+        <main>
+            <div id="productsGrid" class="products-grid"></div>
+        </main>
+
+        <div class="cart-sidebar" id="cartSidebar">
+            <h3>Your Cart <i class="fas fa-shopping-cart"></i></h3>
+            <div id="cartItems"></div>
+            <div class="cart-total">Total: ₹<span id="cartTotal">0</span></div>
+            <button id="checkoutBtn" class="checkout-btn">Proceed to Order</button>
+        </div>
+    </div>
+
+    <!-- Order Modal -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Place Your Order</h2>
+            <form id="orderForm">
+                <input type="text" id="custName" placeholder="Full Name" required>
+                <input type="tel" id="custPhone" placeholder="Phone Number" required>
+                <textarea id="custAddress" placeholder="Delivery Address" required></textarea>
+                <button type="submit">Confirm Order</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Map Section -->
+    <div class="map-section">
+        <h3><i class="fas fa-location-dot"></i> Store Location</h3>
+        <div id="storeMap" style="height: 300px; width: 100%; border-radius: 12px;"></div>
+        <p class="map-address">📍 Dhirenpara, Guwahati, Assam - 781025</p>
+    </div>
+
+    <footer>
+        <p>© 2025 Grocery Hub - Freshness Delivered | WhatsApp: 7002336938 | Dhirenpara, Guwahati</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

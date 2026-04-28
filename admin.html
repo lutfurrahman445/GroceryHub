@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocery Hub - Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1><i class="fas fa-crown"></i> Grocery Hub Admin</h1>
+            <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+        
+        <div id="loginSection" class="login-box" style="display: none;">
+            <h2>Admin Login</h2>
+            <input type="text" id="adminUser" placeholder="Username" value="admin">
+            <input type="password" id="adminPass" placeholder="Password">
+            <button id="loginBtn">Login</button>
+            <p class="demo-creds">Demo: admin / groceryhub</p>
+        </div>
+
+        <div id="dashboard" style="display: none;">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="orders">📦 Orders</button>
+                <button class="tab-btn" data-tab="products">🛒 Manage Products</button>
+            </div>
+            
+            <div id="ordersTab" class="tab-content active">
+                <h2>Customer Orders</h2>
+                <div id="ordersList" class="orders-list"></div>
+            </div>
+            
+            <div id="productsTab" class="tab-content">
+                <h2>Product Inventory</h2>
+                <button id="showAddProductForm" class="add-product-btn">+ Add New Product</button>
+                <div id="productFormContainer" style="display: none;">
+                    <form id="productForm">
+                        <input type="text" id="prodName" placeholder="Product Name" required>
+                        <input type="text" id="prodCategory" placeholder="Category" required>
+                        <input type="number" id="prodPrice" placeholder="Price" step="0.01" required>
+                        <input type="text" id="prodUnit" placeholder="Unit (kg, pack, liter)" required>
+                        <input type="number" id="prodStock" placeholder="Stock Quantity" required>
+                        <input type="text" id="prodImage" placeholder="Image URL (optional)">
+                        <button type="submit">Add Product</button>
+                    </form>
+                </div>
+                <div id="productsList" class="products-list"></div>
+            </div>
+        </div>
+    </div>
+    <script src="admin.js"></script>
+</body>
+</html>
